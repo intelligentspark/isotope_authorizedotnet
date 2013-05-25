@@ -24,7 +24,7 @@
  * @copyright  Isotope eCommerce Workgroup 2009-2011
  * @author     Andreas Schempp <andreas@schempp.ch>
  * @author     Fred Bliss <fred.bliss@intelligentspark.com>
- * @author	   Blair Winans <blair@winanscreative.com>
+ * @author    Blair Winans <blair@winanscreative.com>
  * @author     Christian de la Haye <service@delahaye.de>
  * @license    http://opensource.org/licenses/lgpl-3.0.html
  */
@@ -35,7 +35,7 @@
  */
 define('TL_MODE', 'FE');
 define('BYPASS_TOKEN_CHECK', true);
-require('../../initialize.php');
+require '../../initialize.php';
 
 //Import Auth.net SDK
 require_once 'anet_php_sdk/AuthorizeNet.php';
@@ -63,55 +63,56 @@ class dpmHandler extends Frontend
 	 */
 	public function run()
 	{
-		if( count($_POST) && $this->Input->post('iso_module_id') && $this->Input->post('iso_redirect_url'))
-		{		
+		if
+		( count($_POST) && $this->Input->post('iso_module_id') && $this->Input->post('iso_redirect_url'))
+		{
 			$objModule = $this->Database->prepare("SELECT * FROM tl_iso_payment_modules WHERE id=?")->limit(1)->execute($this->Input->post('iso_module_id'));
-						
+
 			$strUrl = html_entity_decode($this->Input->post('iso_redirect_url'));
 			$strMD5Hash = $this->Encryption->decrypt($objModule->authorize_md5_hash);
 			$strLogin = $this->Encryption->decrypt($objModule->authorize_login);
 			$response = new AuthorizeNetSIM( $strLogin, $strMD5Hash);
 			$strTransHash = $response->generateHash();
-			
+
 			if ($response->isAuthorizeNet())
 			{
 				if ($response->approved)
-	            {
-	                // Do your processing here.
-	                $redirect_url = $strUrl . '?response_code=1&transaction_id=' . $response->transaction_id . '&transaction_hash=' . urlencode($strTransHash);
-	            }
-	            else
-	            {
-	                // Redirect to error page.
-	                $redirect_url = $strUrl . '?response_code='.$response->response_code . '&reason=' . $response->response_reason_text . '&reason_code=' . $response->response_reason_code;
-	            }
+				{
+					// Do your processing here.
+					$redirect_url = $strUrl . '?response_code=1&transaction_id=' . $response->transaction_id . '&transaction_hash=' . urlencode($strTransHash);
+				}
+				else
+				{
+					// Redirect to error page.
+					$redirect_url = $strUrl . '?response_code='.$response->response_code . '&reason=' . $response->response_reason_text . '&reason_code=' . $response->response_reason_code;
+				}
 			}
 			else
 			{
-				 $redirect_url = $strUrl . '?response_code='.$response->response_code . '&reason=' . $response->response_reason_text . '&reason_code=' . $response->response_reason_code;
+				$redirect_url = $strUrl . '?response_code='.$response->response_code . '&reason=' . $response->response_reason_text . '&reason_code=' . $response->response_reason_code;
 			}
-			
-			 // Send the Javascript back to AuthorizeNet, which will redirect user back to your site.
-	         echo $this->getRelayResponseSnippet($redirect_url); 
+
+			// Send the Javascript back to AuthorizeNet, which will redirect user back to your site.
+			echo $this->getRelayResponseSnippet($redirect_url);
 		}
 	}
-	
+
 	/**
-     * A snippet to send to AuthorizeNet to redirect the user back to the
-     * merchant's server. Use this on your relay response page.
-     *
-     * @param string $redirect_url Where to redirect the user.
-     *
-     * @return string
-     */
-    protected function getRelayResponseSnippet($redirect_url)
-    {
-    	$this->loadLanguageFile('default');
-    	
-        return "<html><head><script language=\"javascript\">
+	 * A snippet to send to AuthorizeNet to redirect the user back to the
+	 * merchant's server. Use this on your relay response page.
+	 *
+	 * @param string $redirect_url Where to redirect the user.
+	 *
+	 * @return string
+	 */
+	protected function getRelayResponseSnippet($redirect_url)
+	{
+		$this->loadLanguageFile('default');
+
+		return "<html><head><script language=\"javascript\">
                 <!--
                 try
-                {	
+                {
 	                window.location=\"{$redirect_url}\";
                 }
                 catch (err)
@@ -123,7 +124,7 @@ class dpmHandler extends Frontend
                 </head><body>
                 <a href=\"{$redirect_url}\">" . $GLOBALS['ISO_LANG']['MSC']['authnet_dpm_msg'] . "</a>
                 </body></html>";
-    }
+	}
 }
 
 
