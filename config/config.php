@@ -1,39 +1,20 @@
-<?php if (!defined('TL_ROOT')) die('You cannot access this file directly!');
+<?php
 
 /**
- * Contao Open Source CMS
- * Copyright (C) 2005-2010 Leo Feyer
+ * Isotope eCommerce for Contao Open Source CMS
  *
- * Formerly known as TYPOlight Open Source CMS.
+ * Copyright (C) 2009-2014 terminal42 gmbh & Isotope eCommerce Workgroup
  *
- * This program is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program. If not, please visit the Free
- * Software Foundation website at <http://www.gnu.org/licenses/>.
- *
- * PHP version 5
- * @copyright  Winans Creative 2009-2011
- * @author     Blair Winans <blair@winanscreative.com>
- * @author     Adam Fisher <adam@winanscreative.com>
+ * @package    Isotope
+ * @link       http://isotopeecommerce.org
  * @license    http://opensource.org/licenses/lgpl-3.0.html
  */
 
 
-
 /**
- * Payment modules
+ * Payment methods
  */
-$GLOBALS['ISO_PAY']['authnet_dpm'] = 'PaymentAuthNetDPM';
-
+\Isotope\Model\Payment::registerModelType('authnet_dpm', 'HBAgency\Model\Payment\AuthNetDPM');
 
 /**
  * Steps that will allow the payment method to continue
@@ -46,4 +27,7 @@ $GLOBALS['ISO_CHECKOUT_STEPS_PASS'] = array
 );
 
 
-?>
+/**
+ * Hooks
+ */
+$GLOBALS['ISO_HOOKS']['postCheckout'][]			= array('HBAgency\Model\Payment\AuthNetDPM', 'setPaymentData');

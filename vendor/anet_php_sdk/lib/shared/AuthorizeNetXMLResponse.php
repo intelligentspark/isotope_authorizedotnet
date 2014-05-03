@@ -1,4 +1,4 @@
-<?php if (!defined('TL_ROOT')) die('You can not access this file directly!');
+<?php
 /**
  * Base class for the AuthorizeNet ARB & CIM Responses.
  *

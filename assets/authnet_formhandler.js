@@ -34,7 +34,7 @@ window.addEvent('domready', function(){
 	{
 		$$('input.submit.confirm').each(function(item){
 		
-			item.setProperty('onclick', 'setExpDate();');
+			item.setProperty('onclick', 'setExpDate(); this.getParent().setStyle(\'display\', \'none\');');
 		
 		});
 	}

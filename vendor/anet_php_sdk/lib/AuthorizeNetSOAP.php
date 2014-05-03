@@ -1,4 +1,4 @@
-<?php if (!defined('TL_ROOT')) die('You can not access this file directly!');
+<?php
 /**
  * A simple wrapper for the SOAP API as well as a helper function
  * to generate a documentation file from the WSDL.

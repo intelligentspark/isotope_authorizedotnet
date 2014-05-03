@@ -1,33 +1,19 @@
 <?php
 
 /**
- * Contao Open Source CMS
- * Copyright (C) 2005-2010 Leo Feyer
+ * Isotope eCommerce for Contao Open Source CMS
  *
- * Formerly known as TYPOlight Open Source CMS.
+ * Copyright (C) 2009-2014 terminal42 gmbh & Isotope eCommerce Workgroup
  *
- * This program is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program. If not, please visit the Free
- * Software Foundation website at <http://www.gnu.org/licenses/>.
- *
- * PHP version 5
- * @copyright  Isotope eCommerce Workgroup 2009-2011
- * @author     Andreas Schempp <andreas@schempp.ch>
- * @author     Fred Bliss <fred.bliss@intelligentspark.com>
- * @author    Blair Winans <blair@winanscreative.com>
- * @author     Christian de la Haye <service@delahaye.de>
+ * @package    Isotope
+ * @link       http://isotopeecommerce.org
  * @license    http://opensource.org/licenses/lgpl-3.0.html
  */
+
+namespace HBAgency;
+
+use Isotope\Model\Payment;
+use Haste\Http\Response\Response;
 
 
 /**
@@ -35,17 +21,22 @@
  */
 define('TL_MODE', 'FE');
 define('BYPASS_TOKEN_CHECK', true);
+
 require '../../initialize.php';
 
 //Import Auth.net SDK
-require_once 'anet_php_sdk/AuthorizeNet.php';
+require_once TL_ROOT . '/system/modules/isotope_authorizedotnet/vendor/anet_php_sdk/AuthorizeNet.php';
 
 /**
  * Class dpmHandler
  *
- * handles direct post method response for Authorize.net
+ * Handle Auth.net response
+ * @copyright  HB Agency 2014
+ * @author     Blair Winans <bwinans@hbagency.com>
+ * @author     Adam Fisher <afisher@hbagency.com>
  */
-class dpmHandler extends Frontend
+
+class dpmHandler extends \Frontend
 {
 
 	/**
@@ -54,7 +45,9 @@ class dpmHandler extends Frontend
 	public function __construct()
 	{
 		parent::__construct();
-		$this->import('Encryption');
+		
+		// Contao Hooks are not save to be run on the postsale script (e.g. parseFrontendTemplate)
+        unset($GLOBALS['TL_HOOKS']);
 	}
 
 
@@ -63,56 +56,72 @@ class dpmHandler extends Frontend
 	 */
 	public function run()
 	{
-		if
-		( count($_POST) && $this->Input->post('iso_module_id') && $this->Input->post('iso_redirect_url'))
-		{
-			$objModule = $this->Database->prepare("SELECT * FROM tl_iso_payment_modules WHERE id=?")->limit(1)->execute($this->Input->post('iso_module_id'));
+        try 
+        {
+    		if( count($_POST) && \Input::post('iso_module_id') && \Input::post('iso_redirect_url'))
+    		{	
+    		
+    			$objModule = Payment::findByPk(\Input::post('iso_module_id'));
+    			$strUrl = html_entity_decode(\Input::post('iso_redirect_url'));
+    			$strMD5Hash = \Encryption::decrypt($objModule->authorize_md5_hash);
+    			$strLogin = \Encryption::decrypt($objModule->authorize_login);
+    			$response = new \AuthorizeNetSIM( $strLogin, $strMD5Hash);
+    			$strTransHash = $response->generateHash();
+    			
+    			if ($response->isAuthorizeNet())
+    			{
+    				if ($response->approved)
+    	            {
+            \System::log($response->account_number, __METHOD__, TL_ERROR);
+    	                // Do your processing here.
+    	                $redirect_url = $strUrl . '?response_code=1&transaction_id=' . $response->transaction_id . '&transaction_hash=' . urlencode($strTransHash) . '&lastfour=' . urlencode(\Encryption::encrypt($response->account_number));
 
-			$strUrl = html_entity_decode($this->Input->post('iso_redirect_url'));
-			$strMD5Hash = $this->Encryption->decrypt($objModule->authorize_md5_hash);
-			$strLogin = $this->Encryption->decrypt($objModule->authorize_login);
-			$response = new AuthorizeNetSIM( $strLogin, $strMD5Hash);
-			$strTransHash = $response->generateHash();
+    	                
+    	            }
+    	            else
+    	            {
+    	                // Redirect to error page.
+    	                $redirect_url = $strUrl . '?response_code='.$response->response_code . '&reason=' . $response->response_reason_text . '&reason_code=' . $response->response_reason_code;
+    	            }
+    			}
+    			else
+    			{
+    				 $redirect_url = $strUrl . '?response_code='.$response->response_code . '&reason=' . $response->response_reason_text . '&reason_code=' . $response->response_reason_code;
+    			}
+    			
+                // Send the Javascript back to AuthorizeNet, which will redirect user back to your site.
+                echo $this->getRelayResponseSnippet($redirect_url); 
+    		}
+		
+		} catch (\Exception $e) {
+            \System::log(
+                sprintf('Exception in dpmHandler request in file "%s" on line "%s" with message "%s".',
+                    $e->getFile(),
+                    $e->getLine(),
+                    $e->getMessage()
+                ), __METHOD__, TL_ERROR);
 
-			if ($response->isAuthorizeNet())
-			{
-				if ($response->approved)
-				{
-					// Do your processing here.
-					$redirect_url = $strUrl . '?response_code=1&transaction_id=' . $response->transaction_id . '&transaction_hash=' . urlencode($strTransHash);
-				}
-				else
-				{
-					// Redirect to error page.
-					$redirect_url = $strUrl . '?response_code='.$response->response_code . '&reason=' . $response->response_reason_text . '&reason_code=' . $response->response_reason_code;
-				}
-			}
-			else
-			{
-				$redirect_url = $strUrl . '?response_code='.$response->response_code . '&reason=' . $response->response_reason_text . '&reason_code=' . $response->response_reason_code;
-			}
-
-			// Send the Javascript back to AuthorizeNet, which will redirect user back to your site.
-			echo $this->getRelayResponseSnippet($redirect_url);
-		}
+            $objResponse = new Response('Internal Server Error', 500);
+            $objResponse->send();
+        }
 	}
-
+	
 	/**
-	 * A snippet to send to AuthorizeNet to redirect the user back to the
-	 * merchant's server. Use this on your relay response page.
-	 *
-	 * @param string $redirect_url Where to redirect the user.
-	 *
-	 * @return string
-	 */
-	protected function getRelayResponseSnippet($redirect_url)
-	{
-		$this->loadLanguageFile('default');
-
-		return "<html><head><script language=\"javascript\">
+     * A snippet to send to AuthorizeNet to redirect the user back to the
+     * merchant's server. Use this on your relay response page.
+     *
+     * @param string $redirect_url Where to redirect the user.
+     *
+     * @return string
+     */
+    protected function getRelayResponseSnippet($redirect_url)
+    {
+    	$this->loadLanguageFile('default');
+    	
+        return "<html><head><script language=\"javascript\">
                 <!--
                 try
-                {
+                {	
 	                window.location=\"{$redirect_url}\";
                 }
                 catch (err)
@@ -124,7 +133,7 @@ class dpmHandler extends Frontend
                 </head><body>
                 <a href=\"{$redirect_url}\">" . $GLOBALS['ISO_LANG']['MSC']['authnet_dpm_msg'] . "</a>
                 </body></html>";
-	}
+    }
 }
 
 
@@ -133,5 +142,3 @@ class dpmHandler extends Frontend
  */
 $objDPM = new dpmHandler();
 $objDPM->run();
-
-?>
