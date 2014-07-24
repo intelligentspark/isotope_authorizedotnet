@@ -234,8 +234,8 @@ class AuthNetDPM extends Payment implements IsotopePayment
 							{
 								foreach ($GLOBALS['ISO_HOOKS']['authnetdpm_success'] as $callback)
 								{			
-									$this->import($callback[0]);
-									$this->{$callback[0]}->{$callback[1]}($objModule, $this->objCart, $this);
+		                            $objCallback = \System::importStatic($callback[0]);
+		                            $objCallback->$callback[1]($objModule, $this->objCart, $this);
 								}
 							}
 		    			}
