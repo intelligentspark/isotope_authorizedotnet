@@ -27,9 +27,6 @@ use Isotope\Module\OrderDetails as ModuleIsotopeOrderDetails;
 require_once TL_ROOT . '/system/modules/isotope_authorizedotnet/vendor/anet_php_sdk/AuthorizeNet.php';
 
 
-/**
- * ****** TODO!!  CLEAN THIS UP!  (It is mostly custom for CDSS)
- */
 class AuthNetDPM extends Payment implements IsotopePayment
 {
 
@@ -305,7 +302,6 @@ class AuthNetDPM extends Payment implements IsotopePayment
 			$strReason			= htmlentities(\Input::get('reason'));
 			$strReasonCode 		= \Input::get('reason_code');
 			$strAmount			= sprintf("%1\$.2f", $objOrder->getTotal() );
-			$strLastFour		= \Encryption::decrypt(\Input::get('lastfour'));
 			
 			list($arrResponses['response_code'], $this->strStatus) = array($strCode, $strCode);
 			
@@ -319,11 +315,6 @@ class AuthNetDPM extends Payment implements IsotopePayment
 			if (strlen($strTranId))
 			{
 				$arrResponses['transaction_id'] = $strTranId;
-			}
-			
-			if (strlen($strLastFour))
-			{
-				$arrResponses['last_four'] = $strLastFour;
 			}
 			
 			if (!isset($arrOrderPaymentData['original_auth_amt']))
@@ -343,25 +334,7 @@ class AuthNetDPM extends Payment implements IsotopePayment
 			\Database::getInstance()->prepare("UPDATE tl_iso_product_collection %s WHERE id=?")
 									->set(array('payment_data'=>serialize($arrPaymentInfo)))
 									->executeUncached($objOrder->id);
-		
-		
-            \System::log(\Input::get('lastfour'), __METHOD__, TL_ERROR);
-            
-			// Quick fix...
-			//if (\Input::get('lastfour'))
-			//{
-			//	$strLastFour = \Encryption::decrypt(\Input::get('lastfour'));
-			//	\Database::getInstance()->prepare("UPDATE tl_iso_product_collection SET cc_lastfour=? WHERE id=?")->executeUncached($strLastFour, $objOrder->id);
-			//}
 		}
-		
-		\Database::getInstance()->prepare("INSERT INTO cdss_payment_data %s")->set(array
-		(
-			'id'			=> null,
-			'pid'			=> $objOrder->id,
-			'cart_id'		=> intval(Isotope::getCart()->id), 
-			'payment_data'	=> serialize($arrPaymentInfo),
-		))->executeUncached();
 		
 		$_SESSION['CHECKOUT_DATA']['authNetDpm']['payment_data'] = $arrPaymentInfo;
 
@@ -377,28 +350,10 @@ class AuthNetDPM extends Payment implements IsotopePayment
 		{
 			\System::log('Storing payment data for Order ID ' . $objOrder->id, __METHOD__, TL_GENERAL);
 			
-			$arrSet = array
-			(
-				'payment_data'		=> serialize($_SESSION['CHECKOUT_DATA']['authNetDpm']['payment_data'])
-			);
-			
-			if (isset($_SESSION['CHECKOUT_DATA']['authNetDpm']['payment_data']['last_four']) && strlen($_SESSION['CHECKOUT_DATA']['authNetDpm']['payment_data']['last_four']))
-			{
-				$arrSet['cc_lastfour'] = $_SESSION['CHECKOUT_DATA']['authNetDpm']['payment_data']['last_four'];
-			}
-			
 			\Database::getInstance()->prepare("UPDATE tl_iso_product_collection %s WHERE id=?")
-									->set($arrSet)
+									->set(array('payment_data'=>serialize($_SESSION['CHECKOUT_DATA']['authNetDpm']['payment_data'])))
 									->executeUncached($objOrder->id);
 		}
-        //\System::log(\Input::get('lastfour'), __METHOD__, TL_ERROR);
-		
-		// Quick fix...
-		//if (\Input::get('lastfour'))
-		//{
-		//	$strLastFour = \Encryption::decrypt(\Input::get('lastfour'));
-		//	\Database::getInstance()->prepare("UPDATE tl_iso_product_collection SET cc_lastfour=? WHERE id=?")->executeUncached($strLastFour, $objOrder->id);
-		//}
 	}
     
     
@@ -803,7 +758,12 @@ class AuthNetDPM extends Payment implements IsotopePayment
     	if ($this->debug || \Environment::get('isAjaxRequest'))
     		return false;
     	
-    	$objOrder = Order::createFromCollection(Isotope::getCart());
+    	$objOrder = Order::findOneBy('source_collection_id', Isotope::getCart()->id);
+    	
+    	if ($objOrder === null)
+    	{
+	    	return false;
+    	}
 
 		$arrOrderPaymentData = deserialize($objOrder->payment_data, true);
 		
@@ -822,7 +782,8 @@ class AuthNetDPM extends Payment implements IsotopePayment
 			\Database::getInstance()->prepare("UPDATE tl_iso_product_collection %s WHERE id=?")
 									->set(array('payment_data'=>serialize(array('transaction_voided'=>'1'))))
 									->executeUncached($objOrder->id);
-					
+		
+			
 			return true;
 		}
 		
@@ -1117,14 +1078,6 @@ class AuthNetDPM extends Payment implements IsotopePayment
 			
 		$objOrder->payment_data = serialize($arrPaymentData);
 		$objOrder->save();
-		
-		\Database::getInstance()->prepare("INSERT INTO cdss_payment_data %s")->set(array
-		(
-			'id'			=> null,
-			'pid'			=> $objOrder->id,
-			'cart_id'		=> 0, 
-			'payment_data'	=> serialize($arrPaymentData),
-		))->executeUncached();
 		
 		return $blnReturn;
 	}

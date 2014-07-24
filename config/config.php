@@ -15,6 +15,7 @@
  * Payment methods
  */
 \Isotope\Model\Payment::registerModelType('authnet_dpm', 'HBAgency\Model\Payment\AuthNetDPM');
+\Isotope\Model\Payment::registerModelType('authnet_aim', 'HBAgency\Model\Payment\AuthNetAIM');
 
 /**
  * Steps that will allow the payment method to continue
@@ -31,3 +32,4 @@ $GLOBALS['ISO_CHECKOUT_STEPS_PASS'] = array
  * Hooks
  */
 $GLOBALS['ISO_HOOKS']['postCheckout'][]			= array('HBAgency\Model\Payment\AuthNetDPM', 'setPaymentData');
+$GLOBALS['ISO_HOOKS']['postCheckout'][]			= array('HBAgency\Model\Payment\AuthNetAIM', 'setPaymentData');

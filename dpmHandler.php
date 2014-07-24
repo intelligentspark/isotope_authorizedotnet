@@ -72,11 +72,8 @@ class dpmHandler extends \Frontend
     			{
     				if ($response->approved)
     	            {
-            \System::log($response->account_number, __METHOD__, TL_ERROR);
     	                // Do your processing here.
-    	                $redirect_url = $strUrl . '?response_code=1&transaction_id=' . $response->transaction_id . '&transaction_hash=' . urlencode($strTransHash) . '&lastfour=' . urlencode(\Encryption::encrypt($response->account_number));
-
-    	                
+    	                $redirect_url = $strUrl . '?response_code=1&transaction_id=' . $response->transaction_id . '&transaction_hash=' . urlencode($strTransHash);
     	            }
     	            else
     	            {
