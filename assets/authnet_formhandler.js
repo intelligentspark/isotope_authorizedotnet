@@ -1,4 +1,4 @@
-
+(function($){
 window.addEvent('domready', function(){
 
 	// Set the hidden "x_exp_date" field's value when the month/year are selected
@@ -56,3 +56,4 @@ function setExpDate()
 	}
 	catch(err) {}
 }
+})(document.id);
