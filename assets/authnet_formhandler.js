@@ -2,8 +2,8 @@
 window.addEvent('domready', function(){
 
 	// Set the hidden "x_exp_date" field's value when the month/year are selected
-	var expmonth = $('ctrl_card_expirationMonth');
-	var expyear = $('ctrl_card_expirationYear');
+	var expmonth = document.id('ctrl_card_expirationMonth');
+	var expyear = document.id('ctrl_card_expirationYear');
 
 	if (expmonth && expyear)
 	{
@@ -39,6 +39,64 @@ window.addEvent('domready', function(){
 		});
 	}
 	
+	// CIM logic
+	if (document.id('ctrl_paymentProfile'))
+	{
+		var radios = document.id('ctrl_paymentProfile').getElements('input.radio');
+		
+		for (var i = 0; i < radios.length; i++)
+		{
+			radios[i].addEvent('change', function()
+			{
+				var type = this.get('value');
+				var parents = document.id('ctrl_paymentProfile').getParents('.paymentmethod');
+				
+				if (parents.length)
+				{
+					var parent = parents[0];
+					var fields = parent.getElements('.ccField, .bankField');
+					var tableless = document.id('ctrl_paymentProfile').getParents('table').length == 0;
+
+					for (var j = 0; j < fields.length; j++)
+					{
+						if (tableless)
+						{
+							fields[j].setStyle('display', 'none');
+						}
+						else
+						{
+							fields[j].getParent().getParent().setStyle('display', 'none');
+						}
+					}
+					
+					fields = parents[0].getElements('.'+type+'Field');
+					
+					for (var j = 0; j < fields.length; j++)
+					{
+						if (tableless)
+						{
+							fields[j].setStyle('display', 'block');
+						}
+						else
+						{
+							fields[j].getParent().getParent().setStyle('display', 'table-row');
+						}
+					}
+				}
+			});
+		}
+		
+		// Fire default event
+		if (document.id('ctrl_paymentProfile').getElement('input:checked'))
+		{
+			document.id('ctrl_paymentProfile').getElement('input:checked').fireEvent('change');
+		}
+		else
+		{
+			radios[0].click();
+		}
+	}
+	
 });
 
 
@@ -46,8 +104,8 @@ function setExpDate()
 {
 	try
 	{
-		var expmonth = $('ctrl_card_expirationMonth');
-		var expyear = $('ctrl_card_expirationYear');
+		var expmonth = document.id('ctrl_card_expirationMonth');
+		var expyear = document.id('ctrl_card_expirationYear');
 		var expval = expmonth.get('value') + expyear.get('value').substr(2,2);
 		
 		var exp = $$('input[type="hidden"][name="x_exp_date"]');

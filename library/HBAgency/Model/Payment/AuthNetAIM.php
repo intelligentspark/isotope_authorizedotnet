@@ -377,7 +377,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
         $sale = new \AuthorizeNetAIM($this->strApiLoginId, $this->strTransKey);
         $sale->card_num           = \Input::post('x_card_num');
         $sale->exp_date           = \Input::post('card_expirationMonth') . '/' . \Input::post('card_expirationYear');
-        $sale->amount             = 0.03; //$objOrder->total;
+        $sale->amount             = $objOrder->total;
         $sale->description        = "Order Number " . $objOrder->document_number;
         $sale->first_name         = $arrBillingInfo['firstname'];
         $sale->last_name          = $arrBillingInfo['lastname'];
