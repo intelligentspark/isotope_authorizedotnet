@@ -57,7 +57,7 @@ window.addEvent('domready', function(){
 					{
 						var parent = parents[0];
 						var fields = parent.getElements('.ccField, .bankField');
-						var tableless = document.id('ctrl_paymentProfile').getParents('table') == 0 || document.id('ctrl_paymentProfile').getParents('table')[0].getChildren('tr, tbody').length == 0;
+						var tableless = document.id('ctrl_paymentProfile').getParents('table').length == 0 || document.id('ctrl_paymentProfile').getParents('table')[0].getChildren('tr, tbody').length == 0;
 	
 						for (var j = 0; j < fields.length; j++)
 						{
