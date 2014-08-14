@@ -44,56 +44,60 @@ window.addEvent('domready', function(){
 	{
 		var radios = document.id('ctrl_paymentProfile').getElements('input.radio');
 		
-		for (var i = 0; i < radios.length; i++)
+		if (radios.length)
 		{
-			radios[i].addEvent('change', function()
+			radios.each(function(item, index)
 			{
-				var type = this.get('value');
-				var parents = document.id('ctrl_paymentProfile').getParents('.paymentmethod');
-				
-				if (parents.length)
+				item.addEvent('click', function()
 				{
-					var parent = parents[0];
-					var fields = parent.getElements('.ccField, .bankField');
-					var tableless = document.id('ctrl_paymentProfile').getParents('table').length == 0;
-
-					for (var j = 0; j < fields.length; j++)
+					var type = this.get('value');
+					var parents = document.id('ctrl_paymentProfile').getParents('.paymentmethod');
+					
+					if (parents.length)
 					{
-						if (tableless)
+						var parent = parents[0];
+						var fields = parent.getElements('.ccField, .bankField');
+						var tableless = document.id('ctrl_paymentProfile').getParents('table') == 0 || document.id('ctrl_paymentProfile').getParents('table')[0].getChildren('tr, tbody').length == 0;
+	
+						for (var j = 0; j < fields.length; j++)
 						{
-							fields[j].setStyle('display', 'none');
+							if (tableless)
+							{
+								fields[j].setStyle('display', 'none');
+							}
+							else
+							{
+								fields[j].getParent().getParent().setStyle('display', 'none');
+							}
 						}
-						else
+						
+						fields = parents[0].getElements('.'+type+'Field');
+						
+						for (var j = 0; j < fields.length; j++)
 						{
-							fields[j].getParent().getParent().setStyle('display', 'none');
+							if (tableless)
+							{
+								fields[j].setStyle('display', 'block');
+							}
+							else
+							{
+								fields[j].getParent().getParent().setStyle('display', 'table-row');
+							}
 						}
 					}
-					
-					fields = parents[0].getElements('.'+type+'Field');
-					
-					for (var j = 0; j < fields.length; j++)
-					{
-						if (tableless)
-						{
-							fields[j].setStyle('display', 'block');
-						}
-						else
-						{
-							fields[j].getParent().getParent().setStyle('display', 'table-row');
-						}
-					}
-				}
+				});
 			});
 		}
 		
 		// Fire default event
-		if (document.id('ctrl_paymentProfile').getElement('input:checked'))
-		{
-			document.id('ctrl_paymentProfile').getElement('input:checked').fireEvent('change');
-		}
-		else
+		if (!document.id('ctrl_paymentProfile').getElement('input:checked') && radios.length)
 		{
 			radios[0].click();
+		}
+		// Had issues with IE8
+		if (document.id('ctrl_paymentProfile').getElement('input:checked'))
+		{
+			document.id('ctrl_paymentProfile').getElement('input:checked').fireEvent('click');
 		}
 	}
 	
