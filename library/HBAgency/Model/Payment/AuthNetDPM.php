@@ -353,6 +353,8 @@ class AuthNetDPM extends Payment implements IsotopePayment
 			\Database::getInstance()->prepare("UPDATE tl_iso_product_collection %s WHERE id=?")
 									->set(array('payment_data'=>serialize($_SESSION['CHECKOUT_DATA']['authNetDpm']['payment_data'])))
 									->executeUncached($objOrder->id);
+			
+			unset($_SESSION['CHECKOUT_DATA']['authNetDpm']['payment_data']);
 		}
 	}
     

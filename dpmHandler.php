@@ -74,6 +74,8 @@ class dpmHandler extends \Frontend
     	            {
     	                // Do your processing here.
     	                $redirect_url = $strUrl . '?response_code=1&transaction_id=' . $response->transaction_id . '&transaction_hash=' . urlencode($strTransHash);
+		                $redirect_url .= '&card_type=' . $response->card_type; //Custom add card type
+		                $redirect_url .= '&account_number=' . $response->account_number; //Custom add card last 4
     	            }
     	            else
     	            {

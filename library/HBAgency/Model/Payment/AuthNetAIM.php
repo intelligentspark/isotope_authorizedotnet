@@ -165,6 +165,20 @@ class AuthNetAIM extends Payment implements IsotopePayment
 	 */
 	public function checkoutForm(IsotopeProductCollection $objOrder, \Module $objModule)
 	{
+		if ($this->override_formaction)
+		{
+			if (isset($_SESSION['CHECKOUT_DATA']['authNetAim']['payment_data']))
+			{
+				\Database::getInstance()->prepare("UPDATE tl_iso_product_collection %s WHERE id=?")
+										->set(array('payment_data'=>serialize($_SESSION['CHECKOUT_DATA']['authNetAim']['payment_data'])))
+										->executeUncached($objOrder->id);
+				
+				unset($_SESSION['CHECKOUT_DATA']['authNetAim']['payment_data']);
+			}
+			
+			return false;
+		}
+		
 		$this->setCart($objModule);
 				
 		// Get CC Form
@@ -227,6 +241,34 @@ class AuthNetAIM extends Payment implements IsotopePayment
 									->executeUncached($objOrder->id);
 		}
 	}
+	
+	
+	/**
+	 * Generate payment authorization form
+	 * NOTE:  Will always AUTH_ONLY at this step for PCI Compliance. Capture will take place at process step.
+	 *
+	 * @access	public
+	 * @param	object
+	 * @return	string
+	 */
+	public function paymentForm($objModule)
+	{
+		if ($this->override_formaction)
+		{		
+			$strStep = \Haste\Input\Input::getAutoItem('step');
+			$arrSteps = is_array($GLOBALS['ISO_CHECKOUT_STEPS_PASS']) ? $GLOBALS['ISO_CHECKOUT_STEPS_PASS'] : array();
+			
+			if (!in_array($strStep, $arrSteps))
+			{
+				$objOrder = Order::findBy('source_collection_id', Isotope::getCart()->id);
+				$strBuffer = $this->getCreditCardForm($objModule, $objOrder);
+			}
+			
+			return '<h2>' . $this->label . '</h2>'. $strBuffer;
+		}
+		
+		return '';
+	}
     
     
     
@@ -240,6 +282,8 @@ class AuthNetAIM extends Payment implements IsotopePayment
     protected function getCreditCardForm($objModule, $objOrder)
     {
         $time = time();
+		$this->strFormId = $this->override_formaction ? $objModule->getFormId() : $this->override_formaction;
+		
         $strBuffer = \Input::get('response_code') == '1' ? '<p class="error message">' . $GLOBALS['ISO_LANG']['MSC']['authnet_dpm_locked'] . '</p>' : '';
         
         if (!$this->tableless)
@@ -265,7 +309,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 		}
 		
 		// Get billing data to include on form
-		$arrBillingInfo = $objOrder->getBillingAddress()->row();
+		$arrBillingInfo = $objOrder ? $objOrder->getBillingAddress()->row() : Isotope::getCart()->getBillingAddress()->row();
 		
 		//Build form fields
 		$arrFields = array
@@ -340,6 +384,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 				if($objWidget->hasErrors())
 				{
 					$blnSubmit = false;
+					$objModule->doNotSubmit = true;
 				}
 			}
 			
@@ -371,14 +416,15 @@ class AuthNetAIM extends Payment implements IsotopePayment
     protected function sendAIMRequest($objModule, $objOrder)
     {
     	// Get billing data to include on form
-		$arrBillingInfo = $objOrder->getBillingAddress()->row();
+    	$objCollection = $objOrder ?: Isotope::getCart();
+		$arrBillingInfo = $objCollection->getBillingAddress()->row();
 		$arrSubdivision = explode('-', $arrBillingInfo['subdivision']);
 		
         $sale = new \AuthorizeNetAIM($this->strApiLoginId, $this->strTransKey);
         $sale->card_num           = \Input::post('x_card_num');
         $sale->exp_date           = \Input::post('card_expirationMonth') . '/' . \Input::post('card_expirationYear');
-        $sale->amount             = $objOrder->total;
-        $sale->description        = "Order Number " . $objOrder->document_number;
+        $sale->amount             = $objCollection->total;
+        $sale->description        = $objOrder ? ("Order Number " . $objCollection->document_number) : ("Cart ID " . $objCollection->id);
         $sale->first_name         = $arrBillingInfo['firstname'];
         $sale->last_name          = $arrBillingInfo['lastname'];
         $sale->company            = $arrBillingInfo['company'];
@@ -389,6 +435,11 @@ class AuthNetAIM extends Payment implements IsotopePayment
         $sale->country            = $arrSubdivision[0];
         $sale->phone              = $arrBillingInfo['phone'];
         $sale->email              = $arrBillingInfo['email'];
+
+		if ($this->requireCCV)
+		{
+	        $sale->card_code = \Input::post('x_card_code');
+		}
         
 		//Unset sandbox if live request
 		if(!$this->debug)
@@ -398,6 +449,22 @@ class AuthNetAIM extends Payment implements IsotopePayment
         
         // TODO:  Separate Auth only and Auth Capture
         $this->objResponse = $sale->authorizeAndCapture();
+        
+        $arrPaymentData = deserialize($objCollection->payment_data, true);
+        $arrNewData = array
+        (
+        	'original_auth_amt'				=> $objCollection->total,
+        	'transaction_amount'			=> $objCollection->total,
+        	'response_code'					=> $this->objResponse->response_code,
+        	'response_reason_text'			=> $this->objResponse->response_reason_text,
+        	'response_reason_code'			=> $this->objResponse->response_reason_code,
+        	'transaction_id'				=> $this->objResponse->transaction_id,
+        	'card_type'						=> $this->objResponse->card_type,
+        	'account_number'				=> $this->objResponse->account_number,
+        );
+        
+        $_SESSION['CHECKOUT_DATA']['authNetAim']['payment_data'] = array_merge($arrPaymentData, $arrNewData);
+        $objCollection->payment_data = array_merge($arrPaymentData, $arrNewData);
 
         \System::log('Authorize.net Response: '. $this->objResponse->response_code . '-' . $this->objResponse->response_subcode . '; Reason code: ' . $this->objResponse->response_reason_code . '; Reason text: ' . $this->objResponse->response_reason_text, __METHOD__, TL_INFO);
     
