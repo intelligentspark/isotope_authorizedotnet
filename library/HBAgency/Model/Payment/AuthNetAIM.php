@@ -282,8 +282,8 @@ class AuthNetAIM extends Payment implements IsotopePayment
     protected function getCreditCardForm($objModule, $objOrder)
     {
         $time = time();
-		$this->strFormId = $this->override_formaction ? $objModule->getFormId() : $this->override_formaction;
-		
+		$this->strFormId = $this->override_formaction ? $objModule->getFormId() : $this->strFormId;
+
         $strBuffer = \Input::get('response_code') == '1' ? '<p class="error message">' . $GLOBALS['ISO_LANG']['MSC']['authnet_dpm_locked'] . '</p>' : '';
         
         if (!$this->tableless)
@@ -358,7 +358,9 @@ class AuthNetAIM extends Payment implements IsotopePayment
 			);
 		}
 		
+		// todo: clean this up!
 		$blnSubmit = true;
+		$intSelectedPayment = intval(\Input::post('PaymentMethod') ?: $this->objCart->getPaymentMethod());
 		
 		foreach ($arrFields as $field => $arrData )
 		{
@@ -378,7 +380,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 			$objWidget->tableless = $this->tableless;
 			
 			//Handle form submit
-			if( \Input::post('FORM_SUBMIT') == $this->strFormId )
+			if( \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->id)
 			{
 				$objWidget->validate();
 				if($objWidget->hasErrors())
@@ -397,7 +399,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
         }
         
         //Process the data
-        if($blnSubmit && \Input::post('FORM_SUBMIT') == $this->strFormId)
+        if($blnSubmit && \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->id)
         {
 	        $this->sendAIMRequest($objModule, $objOrder);
         }
