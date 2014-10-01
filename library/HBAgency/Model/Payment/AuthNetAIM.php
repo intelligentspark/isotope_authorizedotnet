@@ -180,7 +180,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 		}
 		
 		$this->setCart($objModule);
-				
+		
 		// Get CC Form
 		$strCCForm = $this->getCreditCardForm($objModule, $objOrder);
 		
@@ -260,7 +260,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 			
 			if (!in_array($strStep, $arrSteps))
 			{
-				$objOrder = Order::findBy('source_collection_id', Isotope::getCart()->id);
+				$objOrder = Order::findOneBy('source_collection_id', Isotope::getCart()->id);
 				$strBuffer = $this->getCreditCardForm($objModule, $objOrder);
 			}
 			
