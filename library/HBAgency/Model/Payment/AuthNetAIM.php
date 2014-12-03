@@ -279,7 +279,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
      * @param	boolean
      * @return	string
      */
-    protected function getCreditCardForm($objModule, $objOrder)
+    protected function getCreditCardForm(&$objModule, $objOrder)
     {
         $time = time();
 		$this->strFormId = $this->override_formaction ? $objModule->getFormId() : $this->strFormId;
@@ -451,6 +451,11 @@ class AuthNetAIM extends Payment implements IsotopePayment
         
         // TODO:  Separate Auth only and Auth Capture
         $this->objResponse = $sale->authorizeAndCapture();
+    	 
+    	if (!$this->objResponse->approved)
+    	{
+	    	$objModule->doNotSubmit = true;
+        }
         
         $arrPaymentData = deserialize($objCollection->payment_data, true);
         $arrNewData = array
@@ -530,10 +535,13 @@ class AuthNetAIM extends Payment implements IsotopePayment
      */
 	protected function handleFailure()
     {
-    	if (!$this->objResponse->approved && strlen($this->objResponse->response_reason_text))
+    	if (!$this->objResponse->approved)
     	{
-    		$_SESSION['ISO_ERROR'][] = $this->objResponse->response_reason_text;
-    		
+    	 	if (strlen($this->objResponse->response_reason_text))
+    	 	{
+	    		$_SESSION['ISO_ERROR'][] = $this->objResponse->response_reason_text;
+    	 	}
+	    		
     		$strErrMsg = 'Authorize.Net error - Response code: ' . $this->objResponse->response_code;
     		$strErrMsg .= ' -- Response subcode: ' . $this->objResponse->response_subcode;
     		$strErrMsg .= ' -- Reason code: ' . $this->objResponse->response_reason_code;
