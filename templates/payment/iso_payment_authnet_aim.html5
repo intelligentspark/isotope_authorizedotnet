@@ -1,0 +1,34 @@
+<div class="authNetAimPaymentForm paymentMethod_<?php echo $this->id; ?>">
+  <div class="inside">
+  <?php if (!$this->tableless): ?>
+    <?php echo $this->parsed; ?>
+  <?php else: ?>
+  	<div class="frontOfCard">
+  	  <div class="cardTypes">
+  	    <?php foreach ($this->cardTypes as $key=>$type): ?>
+  	    	<div class="cardType cardType_<?php echo $key; ?>" onclick="IsotopeXCheckout.setSelectedIndex(document.getElementById('ctrl_x_card_type'), '<?php echo $key; ?>');">
+  	    	  <span class="cardTypeLabel"><?php echo $type; ?></span>
+  	    	</div>
+  	    <?php endforeach; ?>
+  		<?php echo $this->field_x_card_type; ?>
+  	  </div>
+  	  <div class="cardNumber">
+  	    <label>Card Number</label><div class="field"><?php echo $this->field_x_card_num; ?></div>
+  	  </div>
+  	  <div class="cardExp">
+  	    <label>Expiration</label><div class="field"><?php echo $this->field_card_expirationMonth; ?><span class="slash">&#47;</span><?php echo $this->field_card_expirationYear; ?></div>
+  	  </div>
+  	</div>
+  	<?php if ($this->requireCCV): ?>
+  	<div class="backOfCard">
+  	  <div class="cardStrip">
+  	  </div>
+  	  <div class="cardCode">
+  	    <label>Security Code</label><div class="field"><?php echo $this->field_x_card_code; ?></div>
+  	  </div>
+    <?php endif; ?>
+  	</div>
+  	<div class="clear"></div>
+  <?php endif; ?>
+  </div>
+</div>

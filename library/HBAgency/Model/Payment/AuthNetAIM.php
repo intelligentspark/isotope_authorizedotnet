@@ -20,6 +20,7 @@ use Isotope\Isotope;
 use Isotope\Model\Product;
 use Isotope\Model\OrderStatus;
 use Isotope\Model\ProductCollection\Order;
+use Isotope\Module\Checkout;
 use Isotope\Module\OrderDetails as ModuleIsotopeOrderDetails;
 
 
@@ -126,6 +127,14 @@ class AuthNetAIM extends Payment implements IsotopePayment
 	 * @var string
 	 */
 	protected $strFormId = 'payment_authnet_aim';
+
+	/**
+	 * Template
+	 *
+	 * @access protected
+	 * @var string
+	 */
+	protected $strTemplate = 'iso_payment_authnet_aim';
 	
 	
 	/**
@@ -284,7 +293,10 @@ class AuthNetAIM extends Payment implements IsotopePayment
         $time = time();
 		$this->strFormId = $this->override_formaction ? $objModule->getFormId() : $this->strFormId;
 
+		$objTemplate = new \FrontendTemplate($this->strTemplate);
+		
         $strBuffer = \Input::get('response_code') == '1' ? '<p class="error message">' . $GLOBALS['ISO_LANG']['MSC']['authnet_dpm_locked'] . '</p>' : '';
+        $objTemplate->tableless = $this->tableless;
         
         if (!$this->tableless)
         {
@@ -297,7 +309,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
        	
        	foreach ($arrCCTypes as $strCCType)
        	{
-	       	$arrCCFinal[strtoupper(substr($strCCType, 0, 1))] = $GLOBALS['TL_LANG']['CCT'][$strCCType];
+	       	$arrCCFinal[strtoupper(substr($strCCType, 0, 1))] = $GLOBALS['TL_LANG']['CCT'][$strCCType]; // I don't think this is right...
        	}
 
 		$intStartYear = (integer)date('Y', time()); //2-digit year
@@ -358,7 +370,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 			);
 		}
 		
-		// todo: clean this up!
+		$arrParsed = array();
 		$blnSubmit = true;
 		$intSelectedPayment = intval(\Input::post('PaymentMethod') ?: $this->objCart->getPaymentMethod());
 		
@@ -390,7 +402,11 @@ class AuthNetAIM extends Payment implements IsotopePayment
 				}
 			}
 			
-			$strBuffer .= $objWidget->parse();
+			// Give the template plenty of ways to output the fields
+			$strParsed = $objWidget->parse();
+			$strBuffer .= $strParsed;
+			$arrParsed[$field] = $strParsed;
+			$objTemplate->{'field_'.$field} = $strParsed;
 		}
 		
 		if (!$this->tableless)
@@ -400,7 +416,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
         
         //Process the data
         if($blnSubmit && \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->id)
-        {
+        { 
 	        $this->sendAIMRequest($objModule, $objOrder);
 	        
 			// Check for response from Authorize.Net
@@ -414,7 +430,12 @@ class AuthNetAIM extends Payment implements IsotopePayment
 			}
         }
         
-		return $strBuffer;
+        $objTemplate->id 			= $this->id;
+        $objTemplate->requireCCV 	= $this->requireCCV;
+        $objTemplate->parsed 		= $strBuffer;
+		$objTemplate->fields 		= $arrParsed;
+       	$objTemplate->cardTypes 	= $arrCCFinal;
+		return $objTemplate->parse();
 
     }
     
@@ -466,6 +487,10 @@ class AuthNetAIM extends Payment implements IsotopePayment
     	{
 	    	$objModule->doNotSubmit = true;
         }
+        else
+        {
+	        $this->blnProceed = true;
+        }
         
         $arrPaymentData = deserialize($objCollection->payment_data, true);
         $arrNewData = array
@@ -479,7 +504,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
         	'card_type'						=> $this->objResponse->card_type,
         	'account_number'				=> $this->objResponse->account_number,
         );
-        
+		
         $_SESSION['CHECKOUT_DATA']['authNetAim']['payment_data'] = array_merge($arrPaymentData, $arrNewData);
         $objCollection->payment_data = array_merge($arrPaymentData, $arrNewData);
 
@@ -574,7 +599,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
      * @return	void
      */
     public function setCart($objModule)
-    {    
+    {
    		// Allow to customize attributes
 		if (isset($GLOBALS['ISO_HOOKS']['setCart']) && is_array($GLOBALS['ISO_HOOKS']['setCart']))
 		{
@@ -617,6 +642,20 @@ class AuthNetAIM extends Payment implements IsotopePayment
 	public function backendInterface($intOrderId)
 	{
 
+	}
+
+	/**
+	 * Use output buffer to var dump to a string
+	 * 
+	 * @param	string
+	 * @return	string 
+	 */
+	public static function varDumpToString($var)
+	{
+		ob_start();
+		var_dump($var);
+		$result = ob_get_clean();
+		return $result;
 	}
 	
 }

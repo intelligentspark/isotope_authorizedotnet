@@ -30,6 +30,9 @@ ClassLoader::addClasses(array
  */
 TemplateLoader::addFiles(array
 (
+	//Payment forms
+	'iso_payment_authnet_aim'		=> 'system/modules/isotope_authorizedotnet/templates/payment',
+	 
 	//Lockout message
 	'authnet_dpm_lockoutmessage' 	=> 'system/modules/isotope_authorizedotnet/templates/payment',
 	
