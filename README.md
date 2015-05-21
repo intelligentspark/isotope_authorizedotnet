@@ -1,4 +1,4 @@
 isotope_authorizedotnet
 =======================
 
-Implementation of Authorize.net DPM Checkout Method for Isotope eCommerce
+Implementation of Authorize.net payment methods for Isotope eCommerce
