@@ -402,6 +402,16 @@ class AuthNetAIM extends Payment implements IsotopePayment
         if($blnSubmit && \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->id)
         {
 	        $this->sendAIMRequest($objModule, $objOrder);
+	        
+			// Check for response from Authorize.Net
+			if (is_object($this->objResponse))
+			{
+				if ($this->objResponse->approved)
+	    		{
+	                Isotope::getCart()->setPaymentMethod($this);
+	    			Checkout::redirectToStep('process', $objOrder ?: Isotope::getCart());
+				}
+			}
         }
         
 		return $strBuffer;
