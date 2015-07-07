@@ -468,6 +468,21 @@ class AuthNetAIM extends Payment implements IsotopePayment
         $sale->country            = $arrSubdivision[0];
         $sale->phone              = $arrBillingInfo['phone'];
         $sale->email              = $arrBillingInfo['email'];
+		
+		if ($objCollection->requiresShipping())
+		{
+			$arrShippingInfo = $objCollection->getShippingAddress()->row();
+			$arrShipSubdivision = explode('-', $arrShippingInfo['subdivision']);
+			
+	        $sale->ship_to_address    = $arrShippingInfo['street_1'];
+	        $sale->ship_to_city    	  = $arrShippingInfo['city'];
+	        $sale->ship_to_company    = $arrShippingInfo['company'];
+	        $sale->ship_to_country    = $arrShipSubdivision[0];
+	        $sale->ship_to_first_name = $arrShippingInfo['firstname'];
+	        $sale->ship_to_last_name  = $arrShippingInfo['lastname'];
+	        $sale->ship_to_state      = $arrShipSubdivision[1];
+	        $sale->ship_to_zip        = $arrShippingInfo['postal'];
+		}
 
 		if ($this->requireCCV)
 		{
