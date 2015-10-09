@@ -372,7 +372,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 		
 		$arrParsed = array();
 		$blnSubmit = true;
-		$intSelectedPayment = intval(\Input::post('PaymentMethod') ?: $this->objCart->getPaymentMethod());
+		$intSelectedPayment = intval(\Input::post('paymentmethod') ?: $this->objCart->getPaymentMethod());
 		
 		foreach ($arrFields as $field => $arrData )
 		{
@@ -497,6 +497,8 @@ class AuthNetAIM extends Payment implements IsotopePayment
         
         // TODO:  Separate Auth only and Auth Capture
         $this->objResponse = $sale->authorizeAndCapture();
+	        
+log_message(strip_tags(static::varDumpToString($this->objResponse)), 'debugaf.log');
     	 
     	if (!$this->objResponse->approved)
     	{
@@ -656,7 +658,6 @@ class AuthNetAIM extends Payment implements IsotopePayment
 	 */
 	public function backendInterface($intOrderId)
 	{
-
 	}
 
 	/**
