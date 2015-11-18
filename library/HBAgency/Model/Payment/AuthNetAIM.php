@@ -321,7 +321,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 		}
 		
 		// Get billing data to include on form
-		$arrBillingInfo = $objOrder ? $objOrder->getBillingAddress()->row() : Isotope::getCart()->getBillingAddress()->row();
+		$arrBillingInfo = $objOrder && $objOrder->getBillingAddress() ? $objOrder->getBillingAddress()->row() : Isotope::getCart()->getBillingAddress()->row();
 		
 		//Build form fields
 		$arrFields = array
@@ -495,8 +495,15 @@ class AuthNetAIM extends Payment implements IsotopePayment
 			$sale->setSandbox(false);
 		}
         
-        // TODO:  Separate Auth only and Auth Capture
-        $this->objResponse = $sale->authorizeAndCapture();
+
+		if ($this->authorize_trans_type == 'AUTH_ONLY')
+		{
+			$this->objResponse = $sale->authorizeOnly();
+		}
+		else
+		{
+	        $this->objResponse = $sale->authorizeAndCapture();
+		}
 	        
 log_message(strip_tags(static::varDumpToString($this->objResponse)), 'debugaf.log');
     	 
@@ -647,7 +654,6 @@ log_message(strip_tags(static::varDumpToString($this->objResponse)), 'debugaf.lo
 		return array('pending', 'processing', 'complete', 'on_hold', 'cancelled');
 	}
 	
-	
 
 	/**
 	 * Generate the backend POS terminal
@@ -656,8 +662,134 @@ log_message(strip_tags(static::varDumpToString($this->objResponse)), 'debugaf.lo
 	 * @param 	integer
 	 * @return 	string
 	 */
-	public function backendInterface($intOrderId)
+	public function backendInterface($orderId)
 	{
+		if ($this->authorize_trans_type != 'AUTH_ONLY' || ($objOrder = Order::findByPk($orderId)) === null) {
+            return parent::backendInterface($orderId);
+        }
+
+		\Input::setGet('uid', $objOrder->uniqid);
+		
+		$objModule = new ModuleIsotopeOrderDetails(\Database::getInstance()->execute("SELECT * FROM tl_module WHERE type='iso_orderdetails'"));
+
+		$strOrderDetails = $objModule->generate(true);
+
+		$arrPaymentData = deserialize($objOrder->payment_data, true);
+
+
+		//Get the authorize.net configuration data
+		//$objAIMConfig = \Database::getInstance()->prepare("SELECT * FROM tl_iso_payment WHERE type=?")
+		//												->execute('authnet_aim');
+		//if($objAIMConfig->numRows < 1)
+		//{
+		//	return '<i>' . $GLOBALS['TL_LANG']['MSC']['noPaymentModules'] . '</i>';
+		//}
+		
+
+		// Form was submitted
+		if (\Input::post('FORM_SUBMIT') == 'be_pos_terminal' && $arrPaymentData['transaction_id'] !== '0')
+		{
+			$blnAuthCapture = $this->doPriorAuthCapture($objOrder);
+
+			$strResponse = '<p class="tl_info">' . sprintf("Transaction Status: %s, Reason: %s", $this->strStatus, $this->strReason) . '</p>';
+		}
+
+		// Build an array of HTML lines to pass to unknown callbacks so they can insert lines where needed. This really needs to be done in a template...
+		$arrLines = array('<div id="tl_buttons">');
+		$arrLines[] = '
+<input type="hidden" name="FORM_SUBMIT" value="be_pos_terminal">';
+		$arrLines[] = '
+<input type="hidden" name="REQUEST_TOKEN" value="'.REQUEST_TOKEN.'">';
+		$arrLines[] = '
+<a href="'.ampersand(str_replace('&key=payment', '', \Environment::get('request'))).'" class="header_back" title="'.specialchars($GLOBALS['TL_LANG']['MSC']['backBT']).'">'.$GLOBALS['TL_LANG']['MSC']['backBT'].'</a>';
+		$arrLines[] = '
+</div>';
+		$arrLines[] = '
+<h2 class="sub_headline">' . $GLOBALS['ISO_LANG']['PAY']['authorizedotnet'][0] . '</h2>';
+		$arrLines[] = '
+<div class="tl_formbody_edit">';
+		$arrLines[] = '
+<div class="tl_tbox block">';
+
+		$arrLines[] = ($strResponse ? $strResponse : '');
+		$arrLines[] = $strOrderDetails;
+		$arrLines[] = '</div></div>';
+		
+		$objPaidStatus = OrderStatus::findOneByPaid('1');
+		$arrExcludes = array('complete', 'cancelled', 'processing', $objPaidStatus, '3');
+		
+		if (!in_array($objOrder->order_status, $arrExcludes))
+		{
+			$arrLines[] = '<div class="tl_formbody_submit"><div class="tl_submit_container">';
+			$arrLines[] = '<input type="submit" class="submit" value="' . specialchars($GLOBALS['TL_LANG']['MSC']['confirmOrder']) . '"></div></div>';
+		}
+		
+		
+		// HOOK: Provide a way for custom modules to manipulate the backend interface HTML
+		// should be done through a template but this works for now
+		if (isset($GLOBALS['ISO_HOOKS']['authnetdpm_be_interface']) && is_array($GLOBALS['ISO_HOOKS']['authnetdpm_be_interface']))
+		{
+			foreach ($GLOBALS['ISO_HOOKS']['authnetdpm_be_interface'] as $callback)
+			{
+				$this->import($callback[0]);
+				$arrLines = $this->{$callback[0]}->{$callback[1]}($arrLines, $arrOrderInfo, $this);
+			}
+		}
+
+		// Code specific to Authorize.net!
+		$objTemplate = new \BackendTemplate('be_pos_terminal');
+		$objTemplate->orderReview = implode('', $arrLines);
+		$objTemplate->action = ampersand(\Environment::get('request'), ENCODE_AMPERSANDS);
+
+		return $objTemplate->parse();
+	}
+
+
+	/**
+	 * Capture a previously authorized sale.
+	 *
+	 * @access protected
+	 * @return boolean
+	 */
+	protected function doPriorAuthCapture(&$objOrder)
+	{
+		$blnReturn = false;
+		
+		// Get transaction data
+		$arrPaymentData = deserialize($objOrder->payment_data, true);
+        
+        // Try the capture
+		$sale = new \AuthorizeNetAIM($this->strApiLoginId, $this->strTransKey);
+		$sale->setSandbox($this->debug ? true : false);
+		$response = $sale->priorAuthCapture($arrPaymentData['transaction_id'] ?: $arrPaymentData['transaction-id'], $objOrder->getTotal());
+		
+		if ($response->approved)
+		{
+			$objPaidStatus = OrderStatus::findOneByPaid('1');
+			$objOrder->updateOrderStatus($objPaidStatus->id);
+			
+			$this->strStatus = '1';
+			$this->strReason = 'Success!';
+			$blnReturn = true;
+			
+			if (isset($arrPaymentData['reason']))
+				unset($arrPaymentData['reason']);
+		}
+		else
+		{
+			$objOrder->updateOrderStatus(Isotope::getConfig()->orderstatus_error);
+			
+			$this->strStatus = $response->response_code;
+			$this->strReason = $response->response_reason_text;
+			
+			// Store the reason in the Order's payment data
+			$arrPaymentData['reason'] = $response->response_reason_text;
+		}
+			
+		$objOrder->payment_data = serialize($arrPaymentData);
+		$objOrder->save();
+		
+		return $blnReturn;
 	}
 
 	/**
