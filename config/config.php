@@ -33,3 +33,4 @@ $GLOBALS['ISO_CHECKOUT_STEPS_PASS'] = array
  * Hooks
  */
 $GLOBALS['ISO_HOOKS']['postCheckout'][]						= array('HBAgency\Model\Payment\AuthNetDPM', 'setPaymentData');
+$GLOBALS['ISO_HOOKS']['postCheckout'][]						= array('HBAgency\Model\Payment\AuthNetAIM', 'setPaymentData');

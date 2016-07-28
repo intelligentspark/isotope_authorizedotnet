@@ -241,12 +241,12 @@ class AuthNetAIM extends Payment implements IsotopePayment
 	
 	public function setPaymentData(&$objOrder, $arrTokens)
 	{
-		if ($_SESSION['CHECKOUT_DATA']['authNetDpm']['payment_data'])
+		if ($_SESSION['CHECKOUT_DATA']['authNetAim']['payment_data'])
 		{
 			\System::log('Storing payment data for Order ID ' . $objOrder->id, __METHOD__, TL_GENERAL);
 			
 			\Database::getInstance()->prepare("UPDATE tl_iso_product_collection %s WHERE id=?")
-									->set(array('payment_data'=>serialize($_SESSION['CHECKOUT_DATA']['authNetDpm']['payment_data'])))
+									->set(array('payment_data'=>serialize($_SESSION['CHECKOUT_DATA']['authNetAim']['payment_data'])))
 									->executeUncached($objOrder->id);
 		}
 	}
@@ -321,7 +321,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 		}
 		
 		// Get billing data to include on form
-		$arrBillingInfo = $objOrder && $objOrder->getBillingAddress() ? $objOrder->getBillingAddress()->row() : Isotope::getCart()->getBillingAddress()->row();
+		$arrBillingInfo = $objOrder ? $objOrder->getBillingAddress()->row() : Isotope::getCart()->getBillingAddress()->row();
 		
 		//Build form fields
 		$arrFields = array
@@ -372,7 +372,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 		
 		$arrParsed = array();
 		$blnSubmit = true;
-		$intSelectedPayment = intval(\Input::post('paymentmethod') ?: $this->objCart->getPaymentMethod());
+		$intSelectedPayment = intval(\Input::post('PaymentMethod') ?: $this->objCart->getPaymentMethod());
 		
 		foreach ($arrFields as $field => $arrData )
 		{
@@ -495,17 +495,8 @@ class AuthNetAIM extends Payment implements IsotopePayment
 			$sale->setSandbox(false);
 		}
         
-
-		if ($this->authorize_trans_type == 'AUTH_ONLY')
-		{
-			$this->objResponse = $sale->authorizeOnly();
-		}
-		else
-		{
-	        $this->objResponse = $sale->authorizeAndCapture();
-		}
-	        
-log_message(strip_tags(static::varDumpToString($this->objResponse)), 'debugaf.log');
+        // TODO:  Separate Auth only and Auth Capture
+        $this->objResponse = $sale->authorizeAndCapture();
     	 
     	if (!$this->objResponse->approved)
     	{
@@ -654,6 +645,7 @@ log_message(strip_tags(static::varDumpToString($this->objResponse)), 'debugaf.lo
 		return array('pending', 'processing', 'complete', 'on_hold', 'cancelled');
 	}
 	
+	
 
 	/**
 	 * Generate the backend POS terminal
@@ -664,7 +656,7 @@ log_message(strip_tags(static::varDumpToString($this->objResponse)), 'debugaf.lo
 	 */
 	public function backendInterface($orderId)
 	{
-		if ($this->authorize_trans_type != 'AUTH_ONLY' || ($objOrder = Order::findByPk($orderId)) === null) {
+        if ($this->authorize_trans_type != 'AUTH_ONLY' || ($objOrder = Order::findByPk($orderId)) === null) {
             return parent::backendInterface($orderId);
         }
 
@@ -743,8 +735,7 @@ log_message(strip_tags(static::varDumpToString($this->objResponse)), 'debugaf.lo
 
 		return $objTemplate->parse();
 	}
-
-
+	
 	/**
 	 * Capture a previously authorized sale.
 	 *
