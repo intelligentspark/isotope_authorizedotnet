@@ -321,7 +321,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 		}
 		
 		// Get billing data to include on form
-		$arrBillingInfo = $objOrder ? $objOrder->getBillingAddress()->row() : Isotope::getCart()->getBillingAddress()->row();
+		$arrBillingInfo = $objOrder && $objOrder->getBillingAddress() ? $objOrder->getBillingAddress()->row() : Isotope::getCart()->getBillingAddress()->row();
 		
 		//Build form fields
 		$arrFields = array
@@ -372,7 +372,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 		
 		$arrParsed = array();
 		$blnSubmit = true;
-		$intSelectedPayment = intval(\Input::post('PaymentMethod') ?: $this->objCart->getPaymentMethod());
+		$intSelectedPayment = intval(\Input::post('paymentmethod') ?: $this->objCart->getPaymentMethod());
 		
 		foreach ($arrFields as $field => $arrData )
 		{
@@ -495,8 +495,14 @@ class AuthNetAIM extends Payment implements IsotopePayment
 			$sale->setSandbox(false);
 		}
         
-        // TODO:  Separate Auth only and Auth Capture
-        $this->objResponse = $sale->authorizeAndCapture();
+        if ($this->authorize_trans_type == 'AUTH_ONLY')
+		{
+			$this->objResponse = $sale->authorizeOnly();
+		}
+		else
+		{
+	        $this->objResponse = $sale->authorizeAndCapture();
+		}
     	 
     	if (!$this->objResponse->approved)
     	{
