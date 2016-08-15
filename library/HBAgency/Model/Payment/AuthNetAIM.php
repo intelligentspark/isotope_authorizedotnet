@@ -211,6 +211,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 		
 		$objWidget = new \FormSubmit(array('slabel'=>'Order'));
 		$objWidget->tableless = $this->tableless;
+		$objWidget->id = 'confirm';
 		$strBuffer .= "\n" . $objWidget->parse();
 		
 		if (!$this->tableless)
@@ -219,6 +220,18 @@ class AuthNetAIM extends Payment implements IsotopePayment
         }
 		
 		$strBuffer .= "\n" . '</form>' . "\n";
+		$strBuffer .= "<script>
+			try {
+				var frm = document.getElementById('iso_mod_checkout_payment');
+			    if (frm.attachEvent) {
+			        frm.attachEvent('onsubmit', function(){ document.getElementById('ctrl_confirm').disabled = 'disabled'; });
+			    }
+			    else {
+			        frm.addEventListener('submit', function(){ document.getElementById('ctrl_confirm').disabled = 'disabled'; }, true);
+			    }
+		    }
+		    catch (err) {}
+		    </script>";
 		
 						
 		// Check for response from Authorize.Net
