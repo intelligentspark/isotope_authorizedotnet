@@ -405,7 +405,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 			$objWidget->tableless = $this->tableless;
 			
 			//Handle form submit
-			if( \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->id)
+			if( \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->id && !strlen(\Input::post('previousStep')))
 			{
 				$objWidget->validate();
 				if($objWidget->hasErrors())
@@ -428,7 +428,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
         }
         
         //Process the data
-        if($blnSubmit && \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->id)
+        if($blnSubmit && \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->id && !strlen(\Input::post('previousStep')))
         { 
 	        $this->sendAIMRequest($objModule, $objOrder);
 	        
