@@ -327,8 +327,8 @@ class AuthNetAIM extends Payment implements IsotopePayment
 
 		$intStartYear = (integer)date('Y', time()); //2-digit year
 
-		//Build years array - Going forward 7 years
-		for ($i = 0; $i <= 7; $i++)
+		//Build years array - Going forward 7=14 years
+		for ($i = 0; $i <= 14; $i++)
 		{
 			$arrYears[] = (string)$intStartYear+$i;
 		}
