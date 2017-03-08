@@ -1,0 +1,41 @@
+{
+  "name": "intelligentspark/isotope_authorizedotnet",
+  "description": "Isotope payment method Authorize.net",
+  "keywords": [
+    "contao",
+    "isotope",
+    "authorize.net"
+  ],
+  "type": "contao-module",
+  "license": "LGPL-3.0+",
+  "require": {
+    "php": ">=5.5",
+    "ext-curl": "*",
+    "authorizenet/authorizenet": "~1.9"
+  },
+  "authors": [
+    {
+      "name": "Rhyme Digital",
+      "email": "http://rhyme.digital"
+    }
+  ],
+  "autoload": {
+    "psr-0": {
+      "HBAgency\\": [
+        "system/modules/isotope_authorizedotnet/library/"
+      ]
+    }
+  },
+  "extra": {
+    "contao": {
+      "sources": {
+        "": "system/modules/isotope_authorizedotnet"
+      }
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "config": {
+    "preferred-install": "dist"
+  }
+}
