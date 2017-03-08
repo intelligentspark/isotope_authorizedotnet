@@ -427,7 +427,7 @@ class AuthNetAIM extends Payment
         }
         
         //Process the data
-        if($blnSubmit && \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->id && !strlen(\Input::post('previousStep')))
+        if($blnSubmit && \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->getId() && !strlen(\Input::post('previousStep')))
         { 
 	        $this->sendAIMRequest($objModule, $objOrder);
 	        
