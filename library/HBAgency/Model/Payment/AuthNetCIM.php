@@ -23,11 +23,7 @@ use Isotope\Model\ProductCollection\Order;
 use Isotope\Module\OrderDetails as ModuleIsotopeOrderDetails;
 
 
-//Import Auth.net SDK
-require_once TL_ROOT . '/system/modules/isotope_authorizedotnet/vendor/anet_php_sdk/AuthorizeNet.php';
-
-
-class AuthNetCIM extends Payment implements IsotopePayment
+class AuthNetCIM extends Payment
 {
 	
 	/**

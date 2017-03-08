@@ -24,13 +24,9 @@ use Isotope\Module\Checkout;
 use Isotope\Module\OrderDetails as ModuleIsotopeOrderDetails;
 
 
-//Import Auth.net SDK
-require_once TL_ROOT . '/system/modules/isotope_authorizedotnet/vendor/anet_php_sdk/AuthorizeNet.php';
-
-
-class AuthNetAIM extends Payment implements IsotopePayment
+class AuthNetAIM extends Payment
 {
-	
+
 	/**
 	 * Cart object - Able to handle other cart types than just IsotopeCart
 	 *
@@ -135,8 +131,8 @@ class AuthNetAIM extends Payment implements IsotopePayment
 	 * @var string
 	 */
 	protected $strTemplate = 'iso_payment_authnet_aim';
-	
-	
+
+
 	/**
 	 * Import libraries and initialize some variables
 	 */
@@ -277,7 +273,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 	{
 		if ($this->override_formaction)
 		{		
-			$strStep = \Haste\Input\Input::getAutoItem('step');
+			$strStep = \Input::getAutoItem('step');
 			$arrSteps = is_array($GLOBALS['ISO_CHECKOUT_STEPS_PASS']) ? $GLOBALS['ISO_CHECKOUT_STEPS_PASS'] : array();
 			
 			if (!in_array($strStep, $arrSteps))
@@ -743,7 +739,7 @@ class AuthNetAIM extends Payment implements IsotopePayment
 			foreach ($GLOBALS['ISO_HOOKS']['authnetdpm_be_interface'] as $callback)
 			{
 				$this->import($callback[0]);
-				$arrLines = $this->{$callback[0]}->{$callback[1]}($arrLines, $arrOrderInfo, $this);
+				$arrLines = $this->{$callback[0]}->{$callback[1]}($arrLines, $objOrder, $this);
 			}
 		}
 

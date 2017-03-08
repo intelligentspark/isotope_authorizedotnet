@@ -22,12 +22,8 @@ use Isotope\Model\OrderStatus;
 use Isotope\Model\ProductCollection\Order;
 use Isotope\Module\OrderDetails as ModuleIsotopeOrderDetails;
 
- 
-//Import Auth.net SDK
-require_once TL_ROOT . '/system/modules/isotope_authorizedotnet/vendor/anet_php_sdk/AuthorizeNet.php';
 
-
-class AuthNetDPM extends Payment implements IsotopePayment
+class AuthNetDPM extends Payment
 {
 
 	const LIVE_URL = 'https://secure.authorize.net/gateway/transact.dll';
@@ -211,7 +207,7 @@ class AuthNetDPM extends Payment implements IsotopePayment
 	{
 		if ($this->override_formaction)
 		{		
-			$strStep = \Haste\Input\Input::getAutoItem('step');
+			$strStep = \Input::getAutoItem('step');
 			$arrSteps = is_array($GLOBALS['ISO_CHECKOUT_STEPS_PASS']) ? $GLOBALS['ISO_CHECKOUT_STEPS_PASS'] : array();
 						
 			$objModule->doNotSubmit = (!$this->cartUpdated() && !$this->isUserLockedOut() && !$this->isAuthNetLocked() && in_array($strStep, $arrSteps)) ? false : true;
