@@ -15,8 +15,7 @@
   },
   "authors": [
     {
-      "name": "Rhyme Digital",
-      "email": "http://rhyme.digital"
+      "name": "Rhyme Digital"
     }
   ],
   "autoload": {
