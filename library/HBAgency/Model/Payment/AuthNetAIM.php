@@ -189,8 +189,10 @@ class AuthNetAIM extends Payment
 		$strCCForm = $this->getCreditCardForm($objModule, $objOrder);
 		
 		// Set form action to the current URL
-		$strAction = htmlentities($this->removeGetParams($this->Environment->base . $this->Environment->request));
-		
+		#$strAction = htmlentities($this->removeGetParams($this->Environment->base . $this->Environment->request));
+
+        $strAction = ampersand($this->removeGetParams(\Environment::get('request')), true);
+
 		// todo: put this in a template
 		$strFormStart = "\n" . 
 			'<form action="'.$strAction.'" id="iso_mod_checkout_payment" method="post" enctype="application/x-www-form-urlencoded">' . "\n" . 
@@ -380,7 +382,7 @@ class AuthNetAIM extends Payment
 		
 		$arrParsed = array();
 		$blnSubmit = true;
-		$intSelectedPayment = intval(\Input::post('paymentmethod') ?: $this->objCart->getPaymentMethod());
+		$intSelectedPayment = intval($this->objCart->getPaymentMethod()->getId());
 		
 		foreach ($arrFields as $field => $arrData )
 		{
@@ -393,14 +395,16 @@ class AuthNetAIM extends Payment
 			}
 			
 			$objWidget = new $strClass($strClass::getAttributesFromDca($arrData, $field));
+
 			if($arrData['value'])
 			{
 				$objWidget->value = $arrData['value'];
 			}
+
 			$objWidget->tableless = $this->tableless;
-			
+
 			//Handle form submit
-			if( \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->id && !strlen(\Input::post('previousStep')))
+			if( \Input::post('FORM_SUBMIT') == $this->strFormId && $intSelectedPayment == $this->getId() && !strlen(\Input::post('previousStep')))
 			{
 				$objWidget->validate();
 				if($objWidget->hasErrors())
@@ -460,7 +464,7 @@ class AuthNetAIM extends Payment
     	$objCollection = $objOrder ?: Isotope::getCart();
 		$arrBillingInfo = $objCollection->getBillingAddress()->row();
 		$arrSubdivision = explode('-', $arrBillingInfo['subdivision']);
-		
+
         $sale = new \AuthorizeNetAIM($this->strApiLoginId, $this->strTransKey);
         $sale->card_num           = \Input::post('x_card_num');
         $sale->exp_date           = \Input::post('card_expirationMonth') . '/' . \Input::post('card_expirationYear');

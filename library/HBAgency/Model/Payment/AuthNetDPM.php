@@ -156,7 +156,7 @@ class AuthNetDPM extends Payment
         	$strBuffer .= '<table class="ccform">' . "\n";
         }
 		
-		$objWidget = new FormSubmit(array('slabel'=>'Order'));
+		$objWidget = new \FormSubmit(array('slabel'=>'Order'));
 		$objWidget->tableless = $this->tableless;
 		$strBuffer .= "\n" . $objWidget->parse();
 		
