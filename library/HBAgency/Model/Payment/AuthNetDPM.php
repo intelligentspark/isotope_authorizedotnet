@@ -207,7 +207,7 @@ class AuthNetDPM extends Payment
 	{
 		if ($this->override_formaction)
 		{		
-			$strStep = \Haste\Input\Input::getAutoItem('step');
+			$strStep = \Input::getAutoItem('step');
 			$arrSteps = is_array($GLOBALS['ISO_CHECKOUT_STEPS_PASS']) ? $GLOBALS['ISO_CHECKOUT_STEPS_PASS'] : array();
 						
 			$objModule->doNotSubmit = (!$this->cartUpdated() && !$this->isUserLockedOut() && !$this->isAuthNetLocked() && in_array($strStep, $arrSteps)) ? false : true;
@@ -1158,7 +1158,7 @@ class AuthNetDPM extends Payment
 			foreach ($GLOBALS['ISO_HOOKS']['authnetdpm_be_interface'] as $callback)
 			{
 				$this->import($callback[0]);
-				$arrLines = $this->{$callback[0]}->{$callback[1]}($arrLines, $arrOrderInfo, $this);
+				$arrLines = $this->{$callback[0]}->{$callback[1]}($arrLines, $objOrder, $this);
 			}
 		}
 

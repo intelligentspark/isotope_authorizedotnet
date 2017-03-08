@@ -22,7 +22,7 @@ use Isotope\Model\OrderStatus;
 use Isotope\Model\ProductCollection\Order;
 use Isotope\Module\OrderDetails as ModuleIsotopeOrderDetails;
 
-class AuthNetCIM extends Payment implements IsotopePayment
+class AuthNetCIM extends Payment
 {
 	
 	/**
