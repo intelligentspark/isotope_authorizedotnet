@@ -501,7 +501,7 @@ class AuthNetDPM extends Payment
 			'iso_module_id' => array
 			(
 				'inputType'		=> 'hidden',
-				'value'			=> $this->id,
+				'value'			=> $this->getId(),
 			),
 			'x_first_name' => array
 			(

@@ -442,7 +442,7 @@ class AuthNetAIM extends Payment
 			}
         }
         
-        $objTemplate->id 			= $this->id;
+        $objTemplate->id 			= $this->getId();
         $objTemplate->requireCCV 	= $this->requireCCV;
         $objTemplate->parsed 		= $strBuffer;
 		$objTemplate->fields 		= $arrParsed;
