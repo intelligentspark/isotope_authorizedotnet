@@ -22,7 +22,8 @@ use Isotope\Model\OrderStatus;
 use Isotope\Model\ProductCollection\Order;
 use Isotope\Module\OrderDetails as ModuleIsotopeOrderDetails;
 
-class AuthNetDPM extends Payment implements IsotopePayment
+
+class AuthNetDPM extends Payment
 {
 
 	const LIVE_URL = 'https://secure.authorize.net/gateway/transact.dll';
