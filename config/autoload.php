@@ -13,7 +13,9 @@
 /**
  * Register PSR-0 namespace
  */
-NamespaceClassLoader::add('HBAgency', 'system/modules/isotope_authorizedotnet/library');
+if (class_exists('NamespaceClassLoader')) {
+    NamespaceClassLoader::add('HBAgency', 'system/modules/isotope_authorizedotnet/library');
+}
 
 
 /**
